@@ -1,0 +1,35 @@
+build --incompatible_enable_cc_toolchain_resolution
+
+build:repo-cache --repository_cache=~/.bazel/repository_cache/
+
+build:bes --config=repo-cache
+build:bes --bes_results_url=https://app.buildbuddy.io/invocation/
+build:bes --bes_backend=grpcs://remote.buildbuddy.io
+build:bes --remote_timeout=3600
+build:bes --noslim_profile
+build:bes --experimental_profile_include_target_label
+build:bes --experimental_profile_include_primary_output 
+build:bes --nolegacy_important_outputs
+build:bes --build_metadata=VISIBILITY=PUBLIC
+
+build:remote-cache --config=bes
+build:remote-cache --remote_cache=grpcs://remote.buildbuddy.io
+build:remote-cache --experimental_remote_cache_compression
+build:remote-cache --experimental_remote_build_event_upload=minimal
+
+build:remote-exec --config=remote-cache
+build:remote-exec --remote_executor=grpcs://remote.buildbuddy.io
+build:remote-exec --host_cpu=k8
+build:remote-exec --cpu=k8
+build:remote-exec --crosstool_top=@buildbuddy_toolchain//:ubuntu_cc_toolchain_suite
+build:remote-exec --host_platform=//platform:platform_linux
+build:remote-exec --extra_toolchains=@buildbuddy_toolchain//:ubuntu_cc_toolchain
+build:remote-exec --jobs=200
+
+build:without-bytes --config=remote-exec
+build:without-bytes --remote_download_minimal
+
+## User's config
+# Example:
+# build:remote --remote_header=x-buildbuddy-api-key=aaabbbcccddd
+try-import %workspace%/user.bazelrc
